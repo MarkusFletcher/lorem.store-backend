@@ -1,0 +1,10 @@
+[] - Вынести логику получения user из auth.service
+[] - Переписать UserService.toggleFavorite с испоользованием ProductService.getById
+[] - 
+[] - 
+[] - 
+[] - 
+[] - 
+[] - 
+[] - 
+[] - 
