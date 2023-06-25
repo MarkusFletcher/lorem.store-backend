@@ -35,12 +35,22 @@ export class CategoryService {
     return categories
   }
 
-  async findOne(id: number) {
-    const category: Category = await this.prisma.category.findUnique({
-      where: {
-        id,
-      },
-    })
+  async findOne(id: number | string) {
+    let category: Category | null
+
+    if (typeof id === 'number') {
+      category = await this.prisma.category.findUnique({
+        where: {
+          id,
+        },
+      })
+    } else if (typeof id === 'string') {
+      category = await this.prisma.category.findUnique({
+        where: {
+          code: id,
+        },
+      })
+    } else throw new BadRequestException('Укажите id или code раздела')
 
     if (!category) throw new NotFoundException('Раздел не найден')
 
@@ -48,12 +58,13 @@ export class CategoryService {
   }
 
   async update(id: number, categoryDto: CategoryDto) {
-    const category: Category = await this.prisma.category.update({
+    const category: Category | null = await this.prisma.category.update({
       where: {
         id,
       },
       data: {
         ...categoryDto,
+        code: codeGenerator(categoryDto.name),
       },
     })
 
@@ -63,7 +74,7 @@ export class CategoryService {
   }
 
   async remove(id: number) {
-    const category: Category = await this.prisma.category.delete({
+    const category: Category | null = await this.prisma.category.delete({
       where: {
         id,
       },

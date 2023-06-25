@@ -5,7 +5,9 @@ import {
 } from '@nestjs/common'
 import { Product } from '@prisma/client'
 import { PrismaService } from 'src/prisma.service'
+import { reviewSelect } from 'src/review/review.dbquery.object'
 import { codeGenerator } from 'src/utils/code.generator'
+import { productSelect } from './product.dbquery.object'
 import { ProductDto } from './product.dto'
 
 @Injectable()
@@ -18,7 +20,7 @@ export class ProductService {
       productDto.name,
     )
 
-    if (isProductExists) throw new BadRequestException('Раздел уже существует')
+    if (isProductExists) throw new BadRequestException('Товар уже существует')
 
     const product: Product = await this.prisma.product.create({
       data: {
@@ -31,18 +33,41 @@ export class ProductService {
   }
 
   async findAll() {
-    const categories: Product[] = await this.prisma.product.findMany()
-    return categories
+    return await this.prisma.product.findMany({
+      select: productSelect,
+    })
   }
 
-  async findOne(id: number) {
-    const product: Product = await this.prisma.product.findUnique({
-      where: {
-        id,
-      },
-    })
+  async findOne(id: number | string) {
+    let product
 
-    if (!product) throw new NotFoundException('Раздел не найден')
+    if (typeof id === 'number') {
+      product = await this.prisma.product.findUnique({
+        where: {
+          id,
+        },
+        select: {
+          ...productSelect,
+          reviews: {
+            select: reviewSelect,
+          },
+        },
+      })
+    } else if (typeof id === 'string') {
+      product = await this.prisma.product.findUnique({
+        where: {
+          code: id,
+        },
+        select: {
+          ...productSelect,
+          reviews: {
+            select: reviewSelect,
+          },
+        },
+      })
+    } else throw new BadRequestException('Укажите id или code товара')
+
+    if (!product) throw new NotFoundException('Товар не найден')
 
     return product
   }
@@ -54,10 +79,11 @@ export class ProductService {
       },
       data: {
         ...productDto,
+        code: codeGenerator(productDto.name),
       },
     })
 
-    if (!product) throw new NotFoundException('Раздел не найден')
+    if (!product) throw new NotFoundException('Товар не найден')
 
     return product
   }
@@ -69,9 +95,9 @@ export class ProductService {
       },
     })
 
-    if (!product) throw new NotFoundException('Раздел не найден')
+    if (!product) throw new NotFoundException('Товар не найден')
 
-    return { message: 'Раздел удален' }
+    return { message: 'Товар удален' }
   }
 
   private async isFieldExists(

@@ -1,34 +1,68 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ReviewService } from './review.service';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { UpdateReviewDto } from './dto/update-review.dto';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpCode,
+  UsePipes,
+  ValidationPipe,
+  Put,
+} from '@nestjs/common'
+import { ReviewService } from './review.service'
+import { Auth } from 'src/auth/decorators/auth.decorator'
+import { CurrentUser } from 'src/auth/decorators/user.decorator'
+import { ReviewDto } from './review.dto'
 
 @Controller('review')
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
-  @Post()
-  create(@Body() createReviewDto: CreateReviewDto) {
-    return this.reviewService.create(createReviewDto);
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe())
+  @Auth()
+  @Post('/:productId')
+  async create(
+    @CurrentUser('id') userId: number,
+    @Param('productId') productId: string,
+    @Body() dto: ReviewDto,
+  ) {
+    return this.reviewService.create(userId, +productId, dto)
   }
 
-  @Get()
-  findAll() {
-    return this.reviewService.findAll();
+  @UsePipes(new ValidationPipe())
+  @Get('/:productId')
+  async findAllByProductId(@Param('productId') productId: string) {
+    return this.reviewService.findAllByProductId(+productId)
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reviewService.findOne(+id);
+  @UsePipes(new ValidationPipe())
+  @Get('/detail/:id')
+  async findOne(@Param('id') id: string) {
+    return this.reviewService.findOne(+id)
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
-    return this.reviewService.update(+id, updateReviewDto);
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe())
+  @Auth()
+  @Put('/:id')
+  async update(@Param('id') id: string, @Body() dto: ReviewDto) {
+    return this.reviewService.update(+id, dto)
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.reviewService.remove(+id);
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe())
+  @Auth()
+  @Delete('/:id')
+  async remove(@Param('id') id: string) {
+    return this.reviewService.remove(+id)
+  }
+
+  @UsePipes(new ValidationPipe())
+  @Get('/rating/average/:productId')
+  async getAverageRatingByProductId(@Param('productId') productId: string) {
+    return this.reviewService.getAverageRatingByProductId(+productId)
   }
 }

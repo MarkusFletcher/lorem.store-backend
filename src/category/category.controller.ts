@@ -25,6 +25,10 @@ export class CategoryController {
   @UsePipes(new ValidationPipe())
   @Get('/:id')
   async getById(@Param('id') id: string) {
+    if (isNaN(Number(id))) {
+      const code: string = id
+      return this.categoryService.findOne(code)
+    }
     return this.categoryService.findOne(+id)
   }
 

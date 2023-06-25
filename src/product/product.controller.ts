@@ -25,6 +25,10 @@ export class ProductController {
   @UsePipes(new ValidationPipe())
   @Get('/:id')
   async getById(@Param('id') id: string) {
+    if (isNaN(Number(id))) {
+      const code: string = id
+      return this.productService.findOne(code)
+    }
     return this.productService.findOne(+id)
   }
 

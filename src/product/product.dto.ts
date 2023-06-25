@@ -1,11 +1,4 @@
-import {
-  IsString,
-  MinLength,
-  isArray,
-  IsArray,
-  IsOptional,
-  IsNumber,
-} from 'class-validator'
+import { IsString, MinLength, IsOptional, IsNumber } from 'class-validator'
 
 export class ProductDto {
   @IsString()
@@ -18,14 +11,9 @@ export class ProductDto {
   @IsNumber()
   price: number
 
-  @IsArray()
+  @IsString({ each: true })
   images: string[]
 
-  @IsOptional()
   @IsNumber()
   categoryId: number
-
-  @IsOptional()
-  @IsNumber()
-  favoriteForUserId: number
 }

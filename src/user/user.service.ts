@@ -93,6 +93,35 @@ export class UserService {
     return { message: 'Информация о пользователе обновлена' }
   }
 
+  // Плохое решение
+  async calculateTotalOrders(id) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        orders: {
+          include: {
+            items: true,
+          },
+        },
+      },
+    })
+
+    if (!user) throw new NotFoundException('Пользователь не найден')
+
+    const totalOrders = user.orders.reduce((totalSum, currentOrder) => {
+      return (
+        totalSum +
+        currentOrder.items.reduce((totalOrderSum, currentOrderItem) => {
+          return totalOrderSum + currentOrderItem.price
+        }, 0)
+      )
+    }, 0)
+
+    return totalOrders
+  }
+
   private async isFieldExists(
     fieldName: keyof User,
     fieldValue: any,

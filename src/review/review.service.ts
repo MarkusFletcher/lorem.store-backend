@@ -1,26 +1,93 @@
-import { Injectable } from '@nestjs/common'
-import { CreateReviewDto } from './dto/create-review.dto'
-import { UpdateReviewDto } from './dto/update-review.dto'
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
+import { Review } from '@prisma/client'
+import { PrismaService } from 'src/prisma.service'
+import { reviewSelect } from './review.dbquery.object'
+import { ReviewDto } from './review.dto'
 
 @Injectable()
 export class ReviewService {
-  create(createReviewDto: CreateReviewDto) {
-    return 'This action adds a new review'
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(userId: number, productId: number, reviewDto: ReviewDto) {
+    return await this.prisma.review.create({
+      data: {
+        ...reviewDto,
+        user: {
+          connect: {
+            id: userId,
+          },
+        },
+        product: {
+          connect: {
+            id: productId,
+          },
+        },
+      },
+    })
   }
 
-  findAll() {
-    return `This action returns all review`
+  async findAllByProductId(productId: number) {
+    return await this.prisma.review.findMany({
+      where: {
+        productId,
+      },
+      select: reviewSelect,
+    })
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} review`
+  async findOne(id: number) {
+    const review = await this.prisma.review.findUnique({
+      where: {
+        id,
+      },
+      select: reviewSelect,
+    })
+
+    if (!review) throw new NotFoundException('Отзыв не найден')
+
+    return review
   }
 
-  update(id: number, updateReviewDto: UpdateReviewDto) {
-    return `This action updates a #${id} review`
+  async update(id: number, reviewDto: ReviewDto) {
+    const review: Review | null = await this.prisma.review.update({
+      where: {
+        id,
+      },
+      data: {
+        ...reviewDto,
+      },
+    })
+
+    if (!review) throw new NotFoundException('Отзыв не найден')
+
+    return review
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} review`
+  async remove(id: number) {
+    const review: Review | null = await this.prisma.review.delete({
+      where: {
+        id,
+      },
+    })
+
+    if (!review) throw new NotFoundException('Отзыв не найден')
+
+    return { message: 'Отзыв удален' }
+  }
+  async getAverageRatingByProductId(productId: number) {
+    const averageRating = await this.prisma.review.aggregate({
+      where: {
+        productId,
+      },
+      _avg: {
+        rating: true,
+      },
+    })
+
+    return averageRating._avg.rating.toFixed(2)
   }
 }
