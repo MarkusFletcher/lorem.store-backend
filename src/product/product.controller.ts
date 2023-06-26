@@ -6,11 +6,13 @@ import {
   HttpCode,
   Param,
   Put,
+  Query,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common'
 import { Auth } from 'src/auth/decorators/auth.decorator'
-import { ProductDto } from './product.dto'
+import { AllProductsDto } from './dto/all.products.dto'
+import { ProductDto } from './dto/product.dto'
 import { ProductService } from './product.service'
 
 @Controller('product')
@@ -18,8 +20,18 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Get('/')
-  async getAll() {
-    return this.productService.findAll()
+  async getAll(@Query() dto: AllProductsDto) {
+    return this.productService.findAll(dto)
+  }
+
+  @Get('/similar/:id')
+  async getSimilar(@Param() id: string) {
+    return this.productService.findSimilar(+id)
+  }
+
+  @Get('/category/:code')
+  async getByCategory(@Param() code: string) {
+    return this.productService.findByCategoryId(code)
   }
 
   @UsePipes(new ValidationPipe())

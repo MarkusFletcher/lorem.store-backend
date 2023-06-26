@@ -3,16 +3,21 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { Product } from '@prisma/client'
+import { Prisma, Product } from '@prisma/client'
 import { PrismaService } from 'src/prisma.service'
 import { reviewSelect } from 'src/review/review.dbquery.object'
 import { codeGenerator } from 'src/utils/code.generator'
-import { productSelect } from './product.dbquery.object'
-import { ProductDto } from './product.dto'
+import { productSelect, productSelectFull } from './product.dbquery.object'
+import { ProductDto } from './dto/product.dto'
+import { AllProductsDto, EnumProductSort } from './dto/all.products.dto'
+import { PaginationService } from 'src/pagination/pagination.service'
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly paginationService: PaginationService,
+  ) {}
 
   async create(productDto: ProductDto) {
     const isProductExists: boolean = await this.isFieldExists(
@@ -32,10 +37,59 @@ export class ProductService {
     return product
   }
 
-  async findAll() {
-    return await this.prisma.product.findMany({
-      select: productSelect,
+  async findAll(dto: AllProductsDto = {}) {
+    const { sort, searchTerm } = dto
+
+    const prismaSort: Prisma.ProductOrderByWithRelationInput[] = []
+
+    switch (sort) {
+      case EnumProductSort.HIGHT_PRICE:
+        prismaSort.push({ price: 'asc' })
+        break
+      case EnumProductSort.LOW_PRICE:
+        prismaSort.push({ price: 'desc' })
+        break
+      case EnumProductSort.NEWEST:
+        prismaSort.push({ createdAt: 'desc' })
+        break
+      case EnumProductSort.OLDEST:
+        prismaSort.push({ createdAt: 'asc' })
+        break
+      default:
+        break
+    }
+
+    const prismaSearchTermFilter: Prisma.ProductWhereInput = searchTerm
+      ? {
+          OR: [
+            {
+              category: {
+                name: {
+                  contains: searchTerm,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              name: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }
+      : {}
+
+    const { perPage, skip } = await this.paginationService.getPagination(dto)
+
+    const products = await this.prisma.product.findMany({
+      where: prismaSearchTermFilter,
+      orderBy: prismaSort,
+      skip,
+      take: perPage,
     })
+
+    return products
   }
 
   async findOne(id: number | string) {
@@ -47,10 +101,7 @@ export class ProductService {
           id,
         },
         select: {
-          ...productSelect,
-          reviews: {
-            select: reviewSelect,
-          },
+          ...productSelectFull,
         },
       })
     } else if (typeof id === 'string') {
@@ -59,10 +110,7 @@ export class ProductService {
           code: id,
         },
         select: {
-          ...productSelect,
-          reviews: {
-            select: reviewSelect,
-          },
+          ...productSelectFull,
         },
       })
     } else throw new BadRequestException('Укажите id или code товара')
@@ -70,6 +118,43 @@ export class ProductService {
     if (!product) throw new NotFoundException('Товар не найден')
 
     return product
+  }
+
+  async findByCategoryId(categoryCode: string) {
+    const products = await this.prisma.product.findMany({
+      where: {
+        category: {
+          code: categoryCode,
+        },
+      },
+    })
+
+    if (!products) throw new NotFoundException('Товары не найден')
+
+    return products
+  }
+
+  async findSimilar(id: number) {
+    const currentProduct = await this.findOne(id)
+
+    if (!currentProduct) throw new NotFoundException('Товар не найден')
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        categoryId: currentProduct.categoryId,
+        NOT: {
+          id,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: productSelect,
+    })
+
+    if (!products) return []
+
+    return products
   }
 
   async update(id: number, productDto: ProductDto) {

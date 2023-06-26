@@ -1,6 +1,7 @@
-import { IsString, MinLength, IsOptional, IsNumber } from 'class-validator'
+import { Prisma } from '@prisma/client'
+import { IsString, MinLength, IsNumber } from 'class-validator'
 
-export class ProductDto {
+export class ProductDto implements Prisma.ProductUpdateInput {
   @IsString()
   @MinLength(3)
   name: string
