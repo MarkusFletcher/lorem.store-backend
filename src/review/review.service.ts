@@ -7,12 +7,20 @@ import { Review } from '@prisma/client'
 import { PrismaService } from 'src/prisma.service'
 import { reviewSelect } from './review.dbquery.object'
 import { ReviewDto } from './review.dto'
+import { ProductService } from 'src/product/product.service'
 
 @Injectable()
 export class ReviewService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly productService: ProductService
+  ) {}
 
   async create(userId: number, productId: number, reviewDto: ReviewDto) {
+    const product = await this.productService.findOne(productId)
+
+    if (!product) throw new NotFoundException('Товар не найден')
+
     return await this.prisma.review.create({
       data: {
         ...reviewDto,
