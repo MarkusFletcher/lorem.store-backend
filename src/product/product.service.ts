@@ -164,6 +164,10 @@ export class ProductService {
   }
 
   async update(id: number, productDto: ProductDto) {
+    const category = await this.categoryService.findOne(dto.categoryId)
+    
+    if (!category) throw new NotFoundException('Раздел не найден')
+
     const product: Product = await this.prisma.product.update({
       where: {
         id,
