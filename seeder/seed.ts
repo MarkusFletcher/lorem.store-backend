@@ -12,7 +12,7 @@ const prisma = new PrismaClient()
 const createProducts = async (count: number) => {
   const products: Product[] = []
   for (let i = 0; i < count; i++) {
-    const productName: string = `${faker.commerce.product()} ${faker.commerce.productMaterial()} ${faker.finance.creditCardCVV()}`
+    const productName = `${faker.commerce.product()} ${faker.commerce.productMaterial()} ${faker.finance.creditCardCVV()}`
     const categoryName: string = faker.commerce.department()
     const product: Product = await prisma.product.create({
       data: {
@@ -56,8 +56,8 @@ const createProducts = async (count: number) => {
 
 async function main() {
   console.log('Start seeding ...')
-  // await createProducts(30)
-  updateProductImages()
+  await createProducts(100)
+  // updateProductImages()
 }
 
 main()

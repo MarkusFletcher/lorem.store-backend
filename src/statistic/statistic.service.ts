@@ -24,19 +24,19 @@ export class StatisticService {
     return [
       {
         name: 'Orders',
-        number: user.orders.length,
+        value: user.orders.length,
       },
       {
         name: 'Reviews',
-        number: user.orders.length,
+        value: user.orders.length,
       },
       {
         name: 'Favorites',
-        number: user.favorites.length,
+        value: user.favorites.length,
       },
       {
         name: 'Total orders',
-        number: totalAmount,
+        value: totalAmount,
       },
     ]
   }

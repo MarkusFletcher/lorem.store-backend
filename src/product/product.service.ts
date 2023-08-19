@@ -7,7 +7,7 @@ import { Prisma, Product } from '@prisma/client'
 import { PrismaService } from 'src/prisma.service'
 import { reviewSelect } from 'src/review/review.dbquery.object'
 import { codeGenerator } from 'src/utils/code.generator'
-import { productSelect, productSelectFull } from './product.dbquery.object'
+import { productSelect } from './product.dbquery.object'
 import { ProductDto } from './dto/product.dto'
 import { AllProductsDto, EnumProductSort } from './dto/all.products.dto'
 import { PaginationService } from 'src/pagination/pagination.service'
@@ -87,9 +87,14 @@ export class ProductService {
       orderBy: prismaSort,
       skip,
       take: perPage,
+      select: productSelect,
     })
 
-    return products
+    const length = await this.prisma.product.count({
+      where: prismaSearchTermFilter,
+    })
+
+    return { products, length }
   }
 
   async findOne(id: number | string) {
@@ -101,7 +106,7 @@ export class ProductService {
           id,
         },
         select: {
-          ...productSelectFull,
+          ...productSelect,
         },
       })
     } else if (typeof id === 'string') {
@@ -110,7 +115,7 @@ export class ProductService {
           code: id,
         },
         select: {
-          ...productSelectFull,
+          ...productSelect,
         },
       })
     } else throw new BadRequestException('Укажите id или code товара')

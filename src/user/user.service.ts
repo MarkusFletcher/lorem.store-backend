@@ -41,8 +41,10 @@ export class UserService {
   async updateProfile(id: number, userDto: UserDto) {
     // Если user не найден, сразу отдаст 404
     const user: Partial<User> = await this.getById(id)
+
     // Проверка, заняты ли почта и логин
     const isEmailBusy = await this.isFieldExists('email', userDto.email)
+
     // Вторая часть выражения для исключение из проверки текущего пользователя
     if (isEmailBusy && user.email !== userDto.email)
       throw new BadRequestException('Email занят')

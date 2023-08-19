@@ -9,10 +9,6 @@ export const productSelect: Prisma.ProductSelect = {
   description: true,
   price: true,
   images: true,
-}
-
-export const productSelectFull: Prisma.ProductSelect = {
-  ...productSelect,
   category: {
     select: categorySelect,
   },
