@@ -11,26 +11,32 @@ import { productSelect } from './product.dbquery.object'
 import { ProductDto } from './dto/product.dto'
 import { AllProductsDto, EnumProductSort } from './dto/all.products.dto'
 import { PaginationService } from 'src/pagination/pagination.service'
+import { CategoryService } from 'src/category/category.service'
 
 @Injectable()
 export class ProductService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly paginationService: PaginationService,
+    private readonly categoryService: CategoryService
   ) {}
 
-  async create(productDto: ProductDto) {
+  async create(dto: ProductDto) {
+    const category = await this.categoryService.findOne(dto.categoryId)
+    
+    if (!category) throw new NotFoundException('Раздел не найден')
+
     const isProductExists: boolean = await this.isFieldExists(
       'name',
-      productDto.name,
+      dto.name,
     )
 
     if (isProductExists) throw new BadRequestException('Товар уже существует')
 
     const product: Product = await this.prisma.product.create({
       data: {
-        ...productDto,
-        code: codeGenerator(productDto.name),
+        ...dto,
+        code: codeGenerator(dto.name),
       },
     })
 
@@ -163,6 +169,10 @@ export class ProductService {
   }
 
   async update(id: number, productDto: ProductDto) {
+    const category = await this.categoryService.findOne(dto.categoryId)
+    
+    if (!category) throw new NotFoundException('Раздел не найден')
+
     const product: Product = await this.prisma.product.update({
       where: {
         id,

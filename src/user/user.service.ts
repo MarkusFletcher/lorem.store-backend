@@ -8,10 +8,14 @@ import { hash } from 'argon2'
 import { PrismaService } from 'src/prisma.service'
 import { userSelect } from './user.dbquery.objects'
 import { UserDto } from './user.dto'
+import { ProductService } from 'src/product/product.service'
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly productService: ProductService
+  ) {}
 
   async getById(id: number, select: Prisma.UserSelect = {}) {
     const user = await this.prisma.user.findUnique({
@@ -67,11 +71,7 @@ export class UserService {
 
   async toggleFavorites(id: number, productId: number) {
     const user = await this.getById(id)
-    const product = await this.prisma.product.findUnique({
-      where: {
-        id: productId,
-      },
-    })
+    const product = await this.productService.findOne(productId)
 
     if (!product) throw new NotFoundException('Товар не найден')
 
